@@ -14,9 +14,8 @@ active_fullscreen=$(echo "$active_win" | jq -r '.fullscreen')
 current_ws=$(hyprctl activeworkspace -j | jq '.id')
 
 # 如果没有活动窗口或 class 无效，则退出
-if [ -z "$active_class" ] || [ "$active_class" = "null" ]; then
-    exit 0
-fi
+[ -z "$active_class" ] || [ "$active_class" = "null" ] && exit 0
+
 
 # 获取当前工作区内所有同类窗口的地址列表
 mapfile -t win_addrs < <(hyprctl clients -j | jq -r \
@@ -28,7 +27,7 @@ count=${#win_addrs[@]}
 
 # 如果只有一个或零个同类窗口，提示并退出
 if [ $count -le 1 ]; then
-    hyprctl notify -1 2000 "rgb(ff1ea3)" "No other windows of this class in current workspace"
+    hyprctl notify 0 1000 "rgb(ffff00)" "No other windows of this class in current workspace"
     exit 0
 fi
 
