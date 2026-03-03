@@ -1,7 +1,4 @@
 #!/bin/bash
-# 同类应用内窗口切换器（当前工作区限定），保持全屏状态
-# 依赖: hyprctl, jq
-
 set -euo pipefail
 
 # 获取当前活动窗口信息
