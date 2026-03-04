@@ -50,3 +50,4 @@ EOF
 # 3. 强制移动到左上角并铺满屏幕
 hyprctl dispatch resizeactive  exact 100% 100%
 hyprctl dispatch moveactive exact 0 0
+hyprctl dispatch bringactivetotop

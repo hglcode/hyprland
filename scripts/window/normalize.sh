@@ -29,3 +29,4 @@ fi
 
 hyprctl dispatch resizeactive exact "$WINDOW_W" "$WINDOW_H"
 hyprctl dispatch moveactive exact "$WINDOW_X" "$WINDOW_Y"
+hyprctl dispatch bringactivetotop
