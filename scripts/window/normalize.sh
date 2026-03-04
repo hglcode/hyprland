@@ -18,7 +18,7 @@ state="/tmp/hypr/clients/$add"
 # 退出伪全屏模式
 # ------------------------------
 # shellcheck disable=SC1090
-source "$state" || exit 1
+source "$state"
 rm -f "$state"
 # shellcheck disable=SC2153
 if [ "$FLOATED" != "true" ]; then

@@ -29,6 +29,7 @@ x=$(echo "$win" | jq -r '.at[0]')
 y=$(echo "$win" | jq -r '.at[1]')
 w=$(echo "$win" | jq -r '.size[0]')
 h=$(echo "$win" | jq -r '.size[1]')
+# shellcheck disable=SC2162
 read mx my <<< "$(hyprctl cursorpos -j | jq -r '[.x, .y] | join(" ")')"
 
 

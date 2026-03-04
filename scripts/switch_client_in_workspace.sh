@@ -3,25 +3,23 @@ set -euo pipefail
 
 # ====================== 1. 获取基础信息 ======================
 # 获取当前活动窗口信息（JSON格式）
-active_win=$(hyprctl activewindow -j)
+win=$(hyprctl activewindow -j)
 # 提取当前窗口地址（唯一标识）
-active_addr=$(echo "$active_win" | jq -r '.address')
-# 提取当前窗口全屏状态
-active_fullscreen=$(echo "$active_win" | jq -r '.fullscreen')
+addr=$(echo "$win" | jq -r '.address')
 # 提取当前工作区ID
-current_ws=$(hyprctl activeworkspace -j | jq '.id')
+cws=$(hyprctl activeworkspace -j | jq '.id')
 
 # 校验：如果没有活动窗口/地址无效，直接退出
-[ -z "$active_addr" ] || [ "$active_addr" = "null" ] && exit 0
+[ -z "$addr" ] || [ "$addr" = "null" ] && exit 0
 
 # ====================== 2. 获取当前工作区所有窗口列表 ======================
 # 筛选当前工作区内的所有窗口地址（不限制class）
-mapfile -t win_addrs < <(hyprctl clients -j | jq -r \
-    --argjson ws "$current_ws" \
+mapfile -t addrs < <(hyprctl clients -j | jq -r \
+    --argjson ws "$cws" \
     '.[] | select(.workspace.id == $ws) | .address')
 
 # 统计窗口数量
-count=${#win_addrs[@]}
+count=${#addrs[@]}
 
 # ====================== 3. 边界校验 ======================
 # 如果工作区只有1个/0个窗口，给出提示并退出
@@ -31,16 +29,16 @@ if [ $count -le 1 ]; then
 fi
 
 # ====================== 4. 查找当前窗口在列表中的位置 ======================
-current_index=-1
-for i in "${!win_addrs[@]}"; do
-    if [ "${win_addrs[$i]}" = "$active_addr" ]; then
-        current_index=$i
+curr_idx=-1
+for i in "${!addrs[@]}"; do
+    if [ "${addrs[$i]}" = "$addr" ]; then
+        curr_idx=$i
         break
     fi
 done
 
 # 异常：如果当前窗口不在列表中，退出
-if [ $current_index -eq -1 ]; then
+if [ $curr_idx -eq -1 ]; then
     exit 0
 fi
 
@@ -49,19 +47,15 @@ fi
 direction="${1:-next}"
 if [ "$direction" = "prev" ]; then
     # 上一个：索引-1，加count避免负数，再取模
-    next_index=$(( (current_index - 1 + count) % count ))
+    next_idx=$(( (curr_idx - 1 + count) % count ))
 else
     # 下一个：索引+1，取模实现循环
-    next_index=$(( (current_index + 1) % count ))
+    next_idx=$(( (curr_idx + 1) % count ))
 fi
 
 # ====================== 6. 切换窗口并保持全屏状态 ======================
 # 聚焦到目标窗口
-hyprctl dispatch focuswindow "address:${win_addrs[$next_index]}"
+hyprctl dispatch focuswindow "address:${addrs[$next_idx]}"
 
 # 短暂等待确保焦点切换完成（避免全屏状态设置失效）
 hyprctl dispatch bringactivetotop
-# 将新窗口的全屏状态设置为和原窗口一致
-if [ -n "$active_fullscreen" ] && [ "$active_fullscreen" != "null" ]; then
-    hyprctl dispatch fullscreenstate "$active_fullscreen"
-fi

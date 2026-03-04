@@ -2,59 +2,54 @@
 set -euo pipefail
 
 # 获取当前活动窗口信息
-active_win=$(hyprctl activewindow -j)
-active_addr=$(echo "$active_win" | jq -r '.address')
-active_class=$(echo "$active_win" | jq -r '.class')
-active_fullscreen=$(echo "$active_win" | jq -r '.fullscreen')
+win=$(hyprctl activewindow -j)
+addr=$(echo "$win" | jq -r '.address')
+class=$(echo "$win" | jq -r '.class')
 
 # 获取当前工作区 ID
-current_ws=$(hyprctl activeworkspace -j | jq '.id')
+cws=$(hyprctl activeworkspace -j | jq '.id')
 
 # 如果没有活动窗口或 class 无效，则退出
-[ -z "$active_class" ] || [ "$active_class" = "null" ] && exit 0
+[ -z "$class" ] || [ "$class" = "null" ] && exit 0
 
 
 # 获取当前工作区内所有同类窗口的地址列表
-mapfile -t win_addrs < <(hyprctl clients -j | jq -r \
-    --arg class "$active_class" \
-    --argjson ws "$current_ws" \
+mapfile -t addrs < <(hyprctl clients -j | jq -r \
+    --arg class "$class" \
+    --argjson ws "$cws" \
     '.[] | select(.class == $class and .workspace.id == $ws) | .address')
 
-count=${#win_addrs[@]}
+count=${#addrs[@]}
 
 # 如果只有一个或零个同类窗口，提示并退出
-if [ $count -le 1 ]; then
+if [ "$count" -le 1 ]; then
     hyprctl notify 0 1000 "rgb(ffff00)" "No other windows of this class in current workspace"
     exit 0
 fi
 
 # 查找当前窗口在列表中的索引
-current_index=-1
-for i in "${!win_addrs[@]}"; do
-    if [ "${win_addrs[$i]}" = "$active_addr" ]; then
-        current_index=$i
+curr_idx=-1
+for i in "${!addrs[@]}"; do
+    if [ "${addrs[$i]}" = "$addr" ]; then
+        curr_idx=$i
         break
     fi
 done
 
-if [ $current_index -eq -1 ]; then
+if [ $curr_idx -eq -1 ]; then
     exit 0
 fi
 
 # 确定下一个索引，支持方向参数
 direction="${1:-next}"
 if [ "$direction" = "prev" ]; then
-    next_index=$(( (current_index - 1 + count) % count ))
+    next_idx=$(( (curr_idx - 1 + count) % count ))
 else
-    next_index=$(( (current_index + 1) % count ))
+    next_idx=$(( (curr_idx + 1) % count ))
 fi
 
 # 聚焦到目标窗口
-hyprctl dispatch focuswindow address:${win_addrs[$next_index]}
+hyprctl dispatch focuswindow address:${addrs[$next_idx]}
 
 # 短暂等待确保焦点切换完成
 hyprctl dispatch bringactivetotop
-# 将新窗口的全屏状态设置为与原来相同
-if [ -n "$active_fullscreen" ] && [ "$active_fullscreen" != "null" ]; then
-    hyprctl dispatch fullscreenstate "$active_fullscreen"
-fi
