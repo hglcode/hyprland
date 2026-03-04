@@ -60,8 +60,7 @@ fi
 hyprctl dispatch focuswindow "address:${win_addrs[$next_index]}"
 
 # 短暂等待确保焦点切换完成（避免全屏状态设置失效）
-sleep 0.01
-
+hyprctl dispatch bringactivetotop
 # 将新窗口的全屏状态设置为和原窗口一致
 if [ -n "$active_fullscreen" ] && [ "$active_fullscreen" != "null" ]; then
     hyprctl dispatch fullscreenstate "$active_fullscreen"
