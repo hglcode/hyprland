@@ -5,28 +5,24 @@ set -euo pipefail
 win=$(hyprctl activewindow -j)
 add=$(echo "$win" | jq -r '.address')
 
+# 检查窗口地址是否有效
 if [ -z "$add" ] || [ "$add" == "null" ]; then
     hyprctl notify 0 1000 "rgb(ffff00)" "No active window"
     exit 1
 fi
 
-# 状态文件
-state="/tmp/hypr/clients/$add"
+normalize="/tmp/hypr/clients/$add/floating/normalize"
 
-[ -f "$state" ] || exit 1
-# ------------------------------
-# 退出伪全屏模式
-# ------------------------------
-# shellcheck disable=SC1090
-source "$state"
-rm -f "$state"
-# shellcheck disable=SC2153
-if [ "$FLOATED" != "true" ]; then
-    hyprctl dispatch movecursor "$MOUSE_X" "$MOUSE_Y"
-    hyprctl dispatch settiled
-    exit 0
+# 检查normalize文件是否存在
+if [ ! -f "$normalize" ]; then
+    hyprctl notify 0 1000 "rgb(ffff00)" "No normalize information found"
+    exit 1
 fi
 
-hyprctl dispatch resizeactive exact "$WINDOW_W" "$WINDOW_H"
-hyprctl dispatch moveactive exact "$WINDOW_X" "$WINDOW_Y"
+# 恢复窗口大小和位置
+jq -r '.size | join(" ")' "$normalize" | xargs -r hyprctl dispatch resizeactive exact
+jq -r '.at | join(" ")' "$normalize" | xargs -r hyprctl dispatch moveactive exact
 hyprctl dispatch bringactivetotop
+
+# 通知用户恢复成功
+hyprctl notify 0 1000 "rgb(00ff00)" "Window restored to original size and position"

@@ -9,8 +9,18 @@ here=$(dirname "$self")
 win=$(hyprctl activewindow -j)
 add=$(echo "$win" | jq -r '.address')
 
-if [ -f "/tmp/hypr/clients/$add" ]; then
-    bash "$here/window/normalize.sh"
+maximize="/tmp/hypr/clients/$add/floating/maximize"
+if [ -f "$maximize" ]; then
+    if [ -f "/tmp/hypr/clients/$add/floating/active" ]; then
+        "$here/window/normalize.sh"
+        echo aaaaaaaaaaaaaaaaaa
+    else
+        "$here/toggle_floating.sh"
+    fi
+    /bin/rm -rf "/tmp/hypr/clients/$add/floating/maximize"
 else
-    bash "$here/window/maximize.sh"
+    echo xxxxxxxxxxxxxxxx
+    [ ! -f "/tmp/hypr/clients/$add/floating/active" ] && bash "$here/toggle_floating.sh" maximize
+    "$here/window/maximize.sh"
 fi
+hyprctl dispatch focuswindow "address:$add"

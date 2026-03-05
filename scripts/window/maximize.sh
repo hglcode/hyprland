@@ -15,37 +15,25 @@ fi
 # 解析当前窗口是否为浮动 (floating: true/false)
 floated=$(echo "$win" | jq -r '.floating')
 
-# 状态文件
-state="/tmp/hypr/clients/$add"
-[ -f "$state" ] && exit 0
-mkdir -p "$(dirname "$state")"
+cursor="/tmp/hypr/clients/$add/settiled/cursor"
+normalize="/tmp/hypr/clients/$add/floating/normalize"
+maximize="/tmp/hypr/clients/$add/floating/maximize"
+[ -f "$maximize" ] && exit 0
 
 
-# ------------------------------
-# 进入伪全屏模式
-# ------------------------------
-# 1. 记录原始状态
-x=$(echo "$win" | jq -r '.at[0]')
-y=$(echo "$win" | jq -r '.at[1]')
-w=$(echo "$win" | jq -r '.size[0]')
-h=$(echo "$win" | jq -r '.size[1]')
-# shellcheck disable=SC2162
-read mx my <<< "$(hyprctl cursorpos -j | jq -r '[.x, .y] | join(" ")')"
-
-
-# 写入文件
-cat > "$state" << EOF
-WINDOW_X=$x
-WINDOW_Y=$y
-WINDOW_W=$w
-WINDOW_H=$h
-MOUSE_X=$mx
-MOUSE_Y=$my
-FLOATED=$floated
-EOF
-
-# 2. 如果当前是平铺模式，先强制切到浮动
-[ "$floated" != "true" ] && hyprctl dispatch setfloating
+if [ "$floated" != "true" ]; then
+    mkdir -p "$(dirname "$cursor")"
+    hyprctl cursorpos -j > "$cursor"
+    echo "$cursor"
+    self=$(readlink -f "$0")
+    here=$(dirname "$self")
+    bash "$here/../toggle_floating.sh" maximize
+else
+    mkdir -p "$(dirname "$normalize")"
+    echo "$win" > "$normalize"
+fi
+mkdir -p "$(dirname "$maximize")"
+echo 1 > "$maximize"
 
 # 3. 强制移动到左上角并铺满屏幕
 hyprctl dispatch resizeactive  exact 100% 100%

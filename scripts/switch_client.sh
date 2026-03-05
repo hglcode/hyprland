@@ -11,6 +11,8 @@ win=$(hyprctl activewindow -j)
 addr=$(echo "$win" | jq -r '.address')
 # 提取当前窗口class
 class=$(echo "$win" | jq -r '.class')
+# 获取浮动状态
+float=$(echo "$win" | jq -r '.floating')
 # 提取当前工作区ID
 cws=$(hyprctl activeworkspace -j | jq '.id')
 
@@ -75,9 +77,23 @@ else
     next_idx=$(( (curr_idx + 1) % count ))
 fi
 
-# ====================== 5. 切换窗口并保持全屏状态 ======================
+# ====================== 5. 切换窗口并保持状态 ======================
+# 检查当前窗口的浮动状态文件
+float_file="/tmp/hypr/clients/$addr/floating/active"
+if [ ! -f "$float_file" ] && [ "$float" = "false" ]; then
+    hyprctl dispatch settiled
+fi
+
 # 聚焦到目标窗口
 hyprctl dispatch focuswindow "address:${addrs[$next_idx]}"
 
+# 保持浮动状态
+if [ "$float" = "true" ]; then
+    hyprctl dispatch setfloating
+fi
+
 # 确保窗口显示在最顶层，不受浮动窗口遮挡
 hyprctl dispatch bringactivetotop
+
+# 通知用户切换信息
+hyprctl notify 0 1000 "rgb(00ff00)" "Switched to ${addrs[$next_idx]}"
