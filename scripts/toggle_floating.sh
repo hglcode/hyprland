@@ -15,6 +15,19 @@ if [ "$float" = "true" ]; then
     echo "toggle unfloating"
     echo "$win" > "$normalize"
     /bin/rm -rf "$active"
+
+    # TODO: 如果浮动层有窗口，聚焦到浮动层最上层的窗口
+    # 如果浮动层有窗口，聚焦到浮动层最上层的窗口
+    # 获取当前工作区ID
+    wid=$(hyprctl activeworkspace -j | jq '.id')
+
+    # 获取当前工作区的所有浮动窗口，按focusHistoryID排序，取最小的（最上层）
+    top_add=$(hyprctl clients -j | jq ".[] | select(.workspace.id == $wid and .floating == true) | {address: .address, focusHistoryID: .focusHistoryID}" | jq -s -r 'sort_by(.focusHistoryID) | first | .address')
+
+    # 如果有浮动窗口且不是当前窗口，聚焦到该窗口
+    if [ -n "$top_add" ] && [ "$top_add" != "$add" ]; then
+        add="$top_add"
+    fi
 else
     echo "toggle floating"
     mkdir -p "$(dirname "$cursor")"
@@ -22,3 +35,4 @@ else
     [ "${1:-null}" == "null" ] && echo 1 > "$active"
 fi
 hyprctl dispatch focuswindow "address:$add"
+hyprctl dispatch bringactivetotop
