@@ -79,5 +79,5 @@ fi
 # 聚焦到目标窗口
 hyprctl dispatch focuswindow "address:${addrs[$next_idx]}"
 
-# 短暂等待确保焦点切换完成（避免全屏状态设置失效）
+# 确保窗口显示在最顶层，不受浮动窗口遮挡
 hyprctl dispatch bringactivetotop
