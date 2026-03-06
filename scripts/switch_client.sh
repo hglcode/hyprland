@@ -14,59 +14,36 @@ class=$(echo "$win" | jq -r '.class')
 # 获取浮动状态
 float=$(echo "$win" | jq -r '.floating')
 # 提取当前工作区ID
-cws=$(hyprctl activeworkspace -j | jq '.id')
+cwid=$(hyprctl activeworkspace -j | jq '.id')
 
 # 校验：如果没有活动窗口/地址无效，直接退出
 [ -z "$addr" ] || [ "$addr" = "null" ] && exit 0
 
 # ====================== 2. 获取窗口列表 ======================
 if [ "$mode" = "group" ]; then
-    addrs=""
-    hyprctl clients -j | jq -r \
-        --arg class "$class" \
-        --argjson ws "$cws" \
-        '.[] | select(.class == $class and .workspace.id == $ws) | .address' | while IFS= read -r line; do
-            addrs=addrs=$(printf '%s\n%s' "$addrs" "$line")
-        done
-    addrs=$(echo "$addrs" | grep -v '^$')
-    count=$(echo "$addrs" | wc -l)
-
-    # 边界校验
-    if [ $count -le 1 ]; then
-        hyprctl notify 0 1000 "rgb(ffff00)" "No other windows of this class in current workspace"
-        exit 0
-    fi
+    addrs=$(hyprctl clients -j | jq -r ".[] | select(.class == \"$class\" and .workspace.id == $cwid) | .address")
 elif [ "$mode" = "workspace" ]; then
-    addrs=""
-    hyprctl clients -j | jq -r \
-        --argjson ws "$cws" \
-        '.[] | select(.workspace.id == $ws) | .address' | while IFS= read -r line; do
-            addrs=addrs=$(printf '%s\n%s' "$addrs" "$line")
-        done
-    addrs=$(echo "$addrs" | grep -v '^$')
-    count=$(echo "$addrs" | wc -l)
-
-    # 边界校验
-    if [ $count -le 1 ]; then
-        hyprctl notify 0 1000 "rgb(ffff00)" "No other windows in current workspace"
-        exit 0
-    fi
+    addrs=$(hyprctl clients -j | jq -r ".[] | select(.workspace.id == $cwid) | .address")
 else
     echo "Invalid mode: $mode. Use 'group' or 'workspace'."
     exit 1
 fi
 
+count=$(echo "$addrs" | wc -l)
+printf "%s\n" "$addrs"
+echo "$count"
+if [ "$count" -le 1 ]; then
+    hyprctl notify 0 1000 "rgb(ffff00)" "No other windows of this class in current workspace"
+    exit 0
+fi
+
 # ====================== 3. 查找当前窗口在列表中的位置 ======================
-curr_idx=-1
-echo "$addrs" | while IFS= read -r line; do
-    if [ "$line" = "$addr" ]; then
-        break
-    fi
-    curr_idx=$((curr_idx + 1))
-done
+curr_idx=$(echo "$addrs" | awk -v addr="$addr" '$0 == addr {print NR-1; exit}')
+
+echo "curr_idx: $curr_idx"
 
 # 异常：如果当前窗口不在列表中，退出
-if [ $curr_idx -eq -1 ]; then
+if [ "$curr_idx" -eq -1 ]; then
     exit 0
 fi
 
@@ -88,7 +65,9 @@ fi
 
 # 聚焦到目标窗口
 next_addr=$(echo "$addrs" | sed -n "$((next_idx + 1))p")
+printf "next address: %s\n" "$next_addr"
 hyprctl dispatch focuswindow "address:$next_addr"
+#hyprctl dispatch focuswindow address:0x5644564efb50
 
 # 保持浮动状态
 if [ "$float" = "true" ]; then

@@ -18,7 +18,6 @@ if [ -f "$maximize" ]; then
     fi
     /bin/rm -rf "/tmp/hypr/clients/$add/floating/maximize" > /dev/null 2> /dev/null || true
 else
-    echo xxxxxxxxxxxxxxxx
     [ ! -f "/tmp/hypr/clients/$add/floating/active" ] && "$here/toggle_floating.sh" maximize
     "$here/window/maximize.sh"
 fi

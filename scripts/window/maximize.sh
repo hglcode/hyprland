@@ -24,7 +24,6 @@ maximize="/tmp/hypr/clients/$add/floating/maximize"
 if [ "$floated" != "true" ]; then
     mkdir -p "$(dirname "$cursor")"
     hyprctl cursorpos -j > "$cursor"
-    echo "$cursor"
     self=$(readlink -f "$0")
     here=$(dirname "$self")
     "$here/../toggle_floating.sh" maximize
@@ -33,7 +32,7 @@ else
     echo "$win" > "$normalize"
 fi
 mkdir -p "$(dirname "$maximize")"
-echo 1 > "$maximize"
+touch "$maximize"
 
 # 3. 强制移动到左上角并铺满屏幕
 hyprctl dispatch resizeactive  exact 100% 100%

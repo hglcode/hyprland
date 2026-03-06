@@ -2,6 +2,8 @@
     "cSpell.words": [
         "bringactivetotop",
         "cursorpos",
+        "cwid",
+        "focuswindow",
         "hypr",
         "hyprctl",
         "movecursor",
