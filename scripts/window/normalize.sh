@@ -1,12 +1,12 @@
-#!/bin/bash
-set -euo pipefail
+#!/bin/sh
+set -eu
 
 # 获取当前窗口地址和信息
 win=$(hyprctl activewindow -j)
 add=$(echo "$win" | jq -r '.address')
 
 # 检查窗口地址是否有效
-if [ -z "$add" ] || [ "$add" == "null" ]; then
+if [ -z "$add" ] || [ "$add" = "null" ]; then
     hyprctl notify 0 1000 "rgb(ffff00)" "No active window"
     exit 1
 fi

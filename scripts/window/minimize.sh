@@ -1,13 +1,13 @@
-#!/bin/bash
+#!/bin/sh
 # 窗口最小化脚本
-set -euo pipefail
+set -eu
 
 # 获取当前窗口地址和信息
 win=$(hyprctl activewindow -j)
 add=$(echo "$win" | jq -r '.address')
 
 # 检查窗口地址是否有效
-if [ -z "$add" ] || [ "$add" == "null" ]; then
+if [ -z "$add" ] || [ "$add" = "null" ]; then
     hyprctl notify 0 1000 "rgb(ffff00)" "No active window found"
     exit 1
 fi

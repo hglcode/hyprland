@@ -1,13 +1,13 @@
-#!/bin/bash
+#!/bin/sh
 # 增强版手动伪全屏：支持平铺 -> 浮动 -> 全屏的自动切换
 
-set -euo pipefail
+set -eu
 
 # 获取当前窗口地址和信息
 win=$(hyprctl activewindow -j)
 add=$(echo "$win" | jq -r '.address')
 
-if [ -z "$add" ] || [ "$add" == "null" ]; then
+if [ -z "$add" ] || [ "$add" = "null" ]; then
     hyprctl notify 0 1000 "rgb(ffff00)" "No active window"
     exit 1
 fi
@@ -27,7 +27,7 @@ if [ "$floated" != "true" ]; then
     echo "$cursor"
     self=$(readlink -f "$0")
     here=$(dirname "$self")
-    bash "$here/../toggle_floating.sh" maximize
+    "$here/../toggle_floating.sh" maximize
 else
     mkdir -p "$(dirname "$normalize")"
     echo "$win" > "$normalize"

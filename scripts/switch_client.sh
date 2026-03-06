@@ -1,5 +1,5 @@
-#!/bin/bash
-set -euo pipefail
+#!/bin/sh
+set -eu
 
 mode="${1:-workspace}"
 direction="${2:-next}"
@@ -21,14 +21,15 @@ cws=$(hyprctl activeworkspace -j | jq '.id')
 
 # ====================== 2. 获取窗口列表 ======================
 if [ "$mode" = "group" ]; then
-    # 筛选当前工作区内与当前窗口同类的所有窗口
-    mapfile -t addrs < <(hyprctl clients -j | jq -r \
+    addrs=""
+    hyprctl clients -j | jq -r \
         --arg class "$class" \
         --argjson ws "$cws" \
-        '.[] | select(.class == $class and .workspace.id == $ws) | .address')
-
-    # 统计窗口数量
-    count=${#addrs[@]}
+        '.[] | select(.class == $class and .workspace.id == $ws) | .address' | while IFS= read -r line; do
+            addrs=addrs=$(printf '%s\n%s' "$addrs" "$line")
+        done
+    addrs=$(echo "$addrs" | grep -v '^$')
+    count=$(echo "$addrs" | wc -l)
 
     # 边界校验
     if [ $count -le 1 ]; then
@@ -36,13 +37,14 @@ if [ "$mode" = "group" ]; then
         exit 0
     fi
 elif [ "$mode" = "workspace" ]; then
-    # 筛选当前工作区内的所有窗口地址（不限制class）
-    mapfile -t addrs < <(hyprctl clients -j | jq -r \
+    addrs=""
+    hyprctl clients -j | jq -r \
         --argjson ws "$cws" \
-        '.[] | select(.workspace.id == $ws) | .address')
-
-    # 统计窗口数量
-    count=${#addrs[@]}
+        '.[] | select(.workspace.id == $ws) | .address' | while IFS= read -r line; do
+            addrs=addrs=$(printf '%s\n%s' "$addrs" "$line")
+        done
+    addrs=$(echo "$addrs" | grep -v '^$')
+    count=$(echo "$addrs" | wc -l)
 
     # 边界校验
     if [ $count -le 1 ]; then
@@ -56,11 +58,11 @@ fi
 
 # ====================== 3. 查找当前窗口在列表中的位置 ======================
 curr_idx=-1
-for i in "${!addrs[@]}"; do
-    if [ "${addrs[$i]}" = "$addr" ]; then
-        curr_idx=$i
+echo "$addrs" | while IFS= read -r line; do
+    if [ "$line" = "$addr" ]; then
         break
     fi
+    curr_idx=$((curr_idx + 1))
 done
 
 # 异常：如果当前窗口不在列表中，退出
@@ -85,7 +87,8 @@ if [ ! -f "$float_file" ] && [ "$float" = "false" ]; then
 fi
 
 # 聚焦到目标窗口
-hyprctl dispatch focuswindow "address:${addrs[$next_idx]}"
+next_addr=$(echo "$addrs" | sed -n "$((next_idx + 1))p")
+hyprctl dispatch focuswindow "address:$next_addr"
 
 # 保持浮动状态
 if [ "$float" = "true" ]; then
@@ -96,4 +99,4 @@ fi
 hyprctl dispatch bringactivetotop
 
 # 通知用户切换信息
-hyprctl notify 0 1000 "rgb(00ff00)" "Switched to ${addrs[$next_idx]}"
+hyprctl notify 0 1000 "rgb(00ff00)" "Switched to $next_addr"

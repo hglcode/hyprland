@@ -1,5 +1,5 @@
-#!/bin/bash
-set -euo pipefail
+#!/bin/sh
+set -eu
 
 win=$(hyprctl activewindow -j)
 add=$(echo "$win" | jq -r '.address')
@@ -12,9 +12,8 @@ normalize="/tmp/hypr/clients/$add/floating/normalize"
 [ -f "$cursor" ] && jq -r '[.x, .y] | join(" ")' "$cursor" | xargs -r hyprctl dispatch movecursor
 hyprctl dispatch togglefloating
 if [ "$float" = "true" ]; then
-    echo "toggle unfloating"
     echo "$win" > "$normalize"
-    /bin/rm -rf "$active"
+    /bin/rm -rf "$active" > /dev/null 2> /dev/null || true
 
     # TODO: 如果浮动层有窗口，聚焦到浮动层最上层的窗口
     # 如果浮动层有窗口，聚焦到浮动层最上层的窗口
@@ -29,10 +28,9 @@ if [ "$float" = "true" ]; then
         add="$top_add"
     fi
 else
-    echo "toggle floating"
     mkdir -p "$(dirname "$cursor")"
     hyprctl cursorpos -j > "$cursor"
-    [ "${1:-null}" == "null" ] && echo 1 > "$active"
+    [ "${1:-null}" = "null" ] && echo 1 > "$active"
 fi
 hyprctl dispatch focuswindow "address:$add"
 hyprctl dispatch bringactivetotop
