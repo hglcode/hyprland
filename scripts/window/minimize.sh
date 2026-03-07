@@ -1,6 +1,6 @@
 #!/bin/sh
 # 窗口最小化脚本
-set -eu
+set -u
 
 # 获取当前窗口地址和信息
 win=$(hyprctl activewindow -j)

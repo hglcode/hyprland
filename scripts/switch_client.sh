@@ -1,5 +1,5 @@
 #!/bin/sh
-set -eu
+set -u
 
 mode="${1:-workspace}"
 direction="${2:-next}"
@@ -67,7 +67,6 @@ fi
 next_addr=$(echo "$addrs" | sed -n "$((next_idx + 1))p")
 printf "next address: %s\n" "$next_addr"
 hyprctl dispatch focuswindow "address:$next_addr"
-#hyprctl dispatch focuswindow address:0x5644564efb50
 
 # 保持浮动状态
 if [ "$float" = "true" ]; then

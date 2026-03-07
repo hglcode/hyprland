@@ -1,7 +1,7 @@
 #!/bin/sh
 # 增强版手动伪全屏：支持平铺 -> 浮动 -> 全屏的自动切换
 
-set -eu
+set -u
 
 # 获取当前窗口地址和信息
 win=$(hyprctl activewindow -j)

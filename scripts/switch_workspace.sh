@@ -1,5 +1,5 @@
 #!/bin/sh
-set -eu
+set -u
 
 direction="${1:-next}"
 

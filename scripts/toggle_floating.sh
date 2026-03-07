@@ -1,5 +1,5 @@
 #!/bin/sh
-set -eu
+set -u
 
 win=$(hyprctl activewindow -j)
 add=$(echo "$win" | jq -r '.address')

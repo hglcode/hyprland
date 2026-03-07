@@ -1,5 +1,5 @@
 #!/bin/sh
-set -eu
+set -u
 
 # 获取当前窗口地址和信息
 win=$(hyprctl activewindow -j)
