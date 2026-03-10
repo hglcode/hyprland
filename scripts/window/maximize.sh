@@ -15,15 +15,12 @@ fi
 # 解析当前窗口是否为浮动 (floating: true/false)
 floated=$(echo "$win" | jq -r '.floating')
 
-cursor="/tmp/hypr/clients/$add/settiled/cursor"
 normalize="/tmp/hypr/clients/$add/floating/normalize"
 maximize="/tmp/hypr/clients/$add/floating/maximize"
 [ -f "$maximize" ] && exit 0
 
 
 if [ "$floated" != "true" ]; then
-    mkdir -p "$(dirname "$cursor")"
-    hyprctl cursorpos -j > "$cursor"
     self=$(readlink -f "$0")
     here=$(dirname "$self")
     "$here/../toggle_floating.sh" maximize
