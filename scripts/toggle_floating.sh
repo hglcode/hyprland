@@ -14,7 +14,7 @@ normalize="/tmp/hypr/clients/$add/floating/normalize"
     read -r x y w h << EOF
         $(jq -r '.at[], .size[]' "$settiled" | tr '\n' ' ')
 EOF
-    hyprctl dispatch movecursor $((x + w / 2)) $((y + h / 2))
+    hyprctl dispatch movecursor $((x + w / 2 - 1)) $((y + h / 2 - 1))
 }
 
 hyprctl dispatch togglefloating
@@ -23,6 +23,7 @@ if [ "$float" = "true" ]; then
     echo "$win" > "$normalize"
     /bin/rm -rf "$active" > /dev/null 2> /dev/null || true
 
+    #jq -r '.size | join(" ")' "$settiled" | xargs -r hyprctl dispatch resizeactive exact
     # TODO: 如果浮动层有窗口，聚焦到浮动层最上层的窗口
     # 如果浮动层有窗口，聚焦到浮动层最上层的窗口
 
