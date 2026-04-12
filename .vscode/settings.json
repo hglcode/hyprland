@@ -2,6 +2,7 @@
     "cSpell.words": [
         "activewindow",
         "activeworkspace",
+        "bitdepth",
         "bringactivetotop",
         "bringactivetotops",
         "cursorpos",
@@ -9,6 +10,8 @@
         "focuswindow",
         "hypr",
         "hyprctl",
+        "hyprlauncher",
+        "konsole",
         "movecursor",
         "resizeactive",
         "setfloating",
