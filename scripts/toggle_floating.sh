@@ -34,10 +34,12 @@ if [ "$float" = "true" ]; then
     if [ -n "$top_add" ] && [ "$top_add" != "$add" ]; then
         add="$top_add"
     fi
+    hyprctl notify 0 1000 "rgb(00ff00)" "UN-FLOATED"
 else
     mkdir -p "$(dirname "$settiled")"
     echo "$win" > "$settiled"
-    [ "${1:-null}" = "null" ] && mkdir -p "$(dirname "$active")" && touch "$active" && echo "floating"
+    [ "${1:-null}" = "null" ] && mkdir -p "$(dirname "$active")" && touch "$active"
+    hyprctl notify 0 1000 "rgb(00ff00)" "FLOATED"
 fi
 hyprctl dispatch bringactivetotops
 hyprctl dispatch focuswindow "address:$add"
