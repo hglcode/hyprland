@@ -1,6 +1,6 @@
 #!/bin/sh
 
-set -u
+set -ue
 
 [ $# -lt 1 ] && exit 1
 
@@ -9,5 +9,5 @@ if [ "$1" = "off" ]; then
     ddcutil getvcp 10 | cut -d'=' -f2 | cut -d',' -f1 | tr -d ' ' | tee /tmp/monitor/backlight
     ddcutil setvcp 10 1
 else
-    ddcutil setvcp 10 "$(cat /tmp/monitor/backlight 2>/dev/null || echo 66)"
+    ddcutil setvcp 10 "$(cat /tmp/monitor/backlight 2>/dev/null || echo 60)"
 fi
