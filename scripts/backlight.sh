@@ -1,6 +1,5 @@
 #!/bin/sh
-
-set -ue
+set -eu
 
 [ $# -lt 1 ] && exit 1
 

@@ -18,9 +18,9 @@ hl.monitor({
 ---- MY PROGRAMS ----
 ---------------------
 
-local terminal    = "alacritty"
-local fileManager = "pcmanfm-qt"
-local menu        = "hyprlauncher"
+local terminal = "alacritty"
+local explorer = "pcmanfm-qt"
+local launcher = "hyprlauncher"
 
 -------------------
 ---- AUTOSTART ----
@@ -50,11 +50,11 @@ hl.env("HYPRCURSOR_SIZE", "19")
 
 hl.config({
     general = {
-        gaps_in     = 0,
-        gaps_out    = 0,
-        border_size = 0,
+        gaps_in          = 0,
+        gaps_out         = 0,
+        border_size      = 1,
 
-        col = {
+        col              = {
             active_border   = { colors = { "rgba(33ccffee)", "rgba(00ff99ee)" }, angle = 45 },
             inactive_border = "rgba(595959aa)",
         },
@@ -68,17 +68,17 @@ hl.config({
         rounding       = 5,
         rounding_power = 2,
 
-        active_opacity   = 1.0,
-        inactive_opacity = 0.88,
+        -- active_opacity   = 1.0,
+        -- inactive_opacity = 0.88,
 
-        shadow = {
+        shadow         = {
             enabled      = false,
             range        = 3,
             render_power = 3,
             color        = 0xee1a1a1a,
         },
 
-        blur = {
+        blur           = {
             enabled  = false,
             size     = 3,
             passes   = 1,
@@ -122,23 +122,23 @@ hl.config({
 
 hl.config({
     input = {
-        kb_layout  = "us",
-        kb_variant = "",
-        kb_model   = "",
-        kb_options = "",
-        kb_rules   = "",
+        kb_layout          = "us",
+        kb_variant         = "",
+        kb_model           = "",
+        kb_options         = "",
+        kb_rules           = "",
 
-        follow_mouse = 0,
+        follow_mouse       = 0,
 
-        sensitivity   = -1.0,
-        accel_profile = "adaptive",
-        scroll_factor = 3,
+        sensitivity        = -1.0,
+        accel_profile      = "adaptive",
+        scroll_factor      = 3,
 
         numlock_by_default = true,
         repeat_delay       = 150,
         repeat_rate        = 60,
 
-        touchpad = {
+        touchpad           = {
             natural_scroll = false,
         },
     },
@@ -166,90 +166,135 @@ local home    = os.getenv("HOME")
 hl.bind(mainMod .. " + B", hl.dsp.exec_cmd("x-www-browser"))
 hl.bind(mainMod .. " + C", hl.dsp.exec_cmd("code"))
 hl.bind(mainMod .. " + S", hl.dsp.exec_cmd("subl"))
+hl.bind(mainMod .. " + Z", hl.dsp.exec_cmd("zed"))
 hl.bind(mainMod .. " + T", hl.dsp.exec_cmd(terminal))
-hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager))
-hl.bind(mainMod .. " + R", hl.dsp.exec_cmd(menu))
+hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(explorer))
+hl.bind(mainMod .. " + R", hl.dsp.exec_cmd(launcher))
 
 -- Window management
 hl.bind(mainMod .. " + X", hl.dsp.window.close())
-hl.bind(mainMod .. " + Q", hl.dsp.window.close())
-hl.bind(mainMod .. " + M", hl.dsp.exec_cmd("command -v hyprshutdown >/dev/null 2>&1 && hyprshutdown || hyprctl dispatch exit"))
-hl.bind(mainMod .. " + V", hl.dsp.exec_cmd(home .. "/.config/hypr/scripts/toggle_floating.sh"))
+hl.bind(mainMod .. " + M", hl.dsp.exec_cmd("hyprshutdown || hyprctl dispatch exit"))
+hl.bind(mainMod .. " + V", hl.dsp.window.float({ action = "toggle" }))
 hl.bind(mainMod .. " + L", hl.dsp.exec_cmd("hyprlock"))
 hl.bind(mainMod .. " + P", hl.dsp.window.pseudo())
 hl.bind(mainMod .. " + J", hl.dsp.layout("togglesplit"))
 hl.bind(mainMod .. " + W", hl.dsp.layout("togglesplit"))
 
 -- Maximize toggle
-hl.bind(mainMod .. " + SPACE", hl.dsp.exec_cmd(home .. "/.config/hypr/scripts/toggle_maximize.sh"))
+hl.bind(mainMod .. " + SPACE", hl.dsp.window.fullscreen({
+    mode   = "maximized",
+    action = "toggle",
+}))
 
 -- Workspace navigation
 hl.bind(mainMod .. " + Tab", hl.dsp.focus({ workspace = "e+1" }))
 
 -- Alt+Tab / Alt+Grave: switch clients
-hl.bind("ALT + grave", hl.dsp.exec_cmd(home .. "/.config/hypr/scripts/switch_client.sh group"))
-hl.bind("ALT + Tab",   hl.dsp.exec_cmd(home .. "/.config/hypr/scripts/switch_client.sh workspace"))
+hl.bind("ALT + Tab", hl.dsp.window.cycle_next({ next = true }))
+-- ALT+grave: 在当前工作区里循环切**同 class**窗口
+hl.bind("ALT + grave", function()
+    local cur = hl.get_active_window()
+    if not cur then return end
+    local cur_class = cur.class
+    local ws_id     = cur.workspace.id
+
+    -- 找出当前工作区里所有同 class 的窗口
+    local list      = {}
+    for _, w in ipairs(hl.get_windows({})) do
+        if w.class == cur_class and w.workspace.id == ws_id then
+            list[#list + 1] = w
+        end
+    end
+
+    if #list <= 1 then
+        hl.exec_cmd(string.format(
+            "hyprctl notify 1 1500 'rgb(ffff00)' 'Only one %s window in this workspace'",
+            cur_class
+        ))
+        return
+    end
+
+    -- 找当前窗口在列表里的位置
+    local cur_idx
+    for i, w in ipairs(list) do
+        if w.address == cur.address then
+            cur_idx = i; break
+        end
+    end
+    if not cur_idx then return end
+
+    -- 下一个（循环）
+    local target = list[(cur_idx % #list) + 1]
+
+    -- 切焦点 + 拉到最上
+    hl.dispatch(hl.dsp.focus({ window = target }))
+    hl.dispatch(hl.dsp.window.alter_zorder({ window = target, mode = "top" }))
+end)
 
 -- Screenshot
 hl.bind("ALT + A", hl.dsp.exec_cmd(home .. "/.config/hypr/scripts/screenshot.sh"))
 
 -- Move focus with mainMod + arrow keys
-hl.bind(mainMod .. " + left",  hl.dsp.focus({ direction = "left" }))
+hl.bind(mainMod .. " + left", hl.dsp.focus({ direction = "left" }))
 hl.bind(mainMod .. " + right", hl.dsp.focus({ direction = "right" }))
-hl.bind(mainMod .. " + up",    hl.dsp.focus({ direction = "up" }))
-hl.bind(mainMod .. " + down",  hl.dsp.focus({ direction = "down" }))
+hl.bind(mainMod .. " + up", hl.dsp.focus({ direction = "up" }))
+hl.bind(mainMod .. " + down", hl.dsp.focus({ direction = "down" }))
 
 -- Switch workspaces & move windows with mainMod + [0-9]
 for i = 1, 10 do
     local key = i % 10 -- 10 maps to key 0
-    hl.bind(mainMod .. " + " .. key,          hl.dsp.focus({ workspace = i }))
-    hl.bind(mainMod .. " + SHIFT + " .. key,  hl.dsp.window.move({ workspace = i }))
+    hl.bind(mainMod .. " + " .. key, hl.dsp.focus({ workspace = i }))
+    hl.bind(mainMod .. " + SHIFT + " .. key, hl.dsp.window.move({ workspace = i }))
 end
 
 -- Special workspace (scratchpad)
 hl.bind(mainMod .. " + SHIFT + S", hl.dsp.window.move({ workspace = "special:magic" }))
-hl.bind("CTRL + SPACE",            hl.dsp.workspace.toggle_special("magic"))
+hl.bind("CTRL + SPACE", hl.dsp.workspace.toggle_special("magic"))
 
 -- Scroll through workspaces with mainMod + scroll
 hl.bind(mainMod .. " + mouse_down", hl.dsp.focus({ workspace = "e+1" }))
-hl.bind(mainMod .. " + mouse_up",   hl.dsp.focus({ workspace = "e-1" }))
+hl.bind(mainMod .. " + mouse_up", hl.dsp.focus({ workspace = "e-1" }))
 
 -- Move windows with mainMod + ALT/CTRL + arrows
-hl.bind(mainMod .. " + ALT + left",   hl.dsp.window.move({ direction = "left" }))
-hl.bind(mainMod .. " + ALT + right",  hl.dsp.window.move({ direction = "right" }))
-hl.bind(mainMod .. " + ALT + up",     hl.dsp.window.move({ direction = "up" }))
-hl.bind(mainMod .. " + ALT + down",   hl.dsp.window.move({ direction = "down" }))
-hl.bind(mainMod .. " + CTRL + left",  hl.dsp.window.move({ direction = "left" }))
+hl.bind(mainMod .. " + ALT + left", hl.dsp.window.move({ direction = "left" }))
+hl.bind(mainMod .. " + ALT + right", hl.dsp.window.move({ direction = "right" }))
+hl.bind(mainMod .. " + ALT + up", hl.dsp.window.move({ direction = "up" }))
+hl.bind(mainMod .. " + ALT + down", hl.dsp.window.move({ direction = "down" }))
+hl.bind(mainMod .. " + CTRL + left", hl.dsp.window.move({ direction = "left" }))
 hl.bind(mainMod .. " + CTRL + right", hl.dsp.window.move({ direction = "right" }))
-hl.bind(mainMod .. " + CTRL + up",    hl.dsp.window.move({ direction = "up" }))
-hl.bind(mainMod .. " + CTRL + down",  hl.dsp.window.move({ direction = "down" }))
+hl.bind(mainMod .. " + CTRL + up", hl.dsp.window.move({ direction = "up" }))
+hl.bind(mainMod .. " + CTRL + down", hl.dsp.window.move({ direction = "down" }))
 
 -- Mouse bindings (move/resize with drag)
-hl.bind(mainMod .. " + mouse:272", hl.dsp.window.drag(),   { mouse = true })
+hl.bind(mainMod .. " + mouse:272", hl.dsp.window.drag(), { mouse = true })
 hl.bind(mainMod .. " + mouse:273", hl.dsp.window.resize(), { mouse = true })
-hl.bind("mouse:274",               hl.dsp.window.drag(),   { mouse = true })
+hl.bind("mouse:274", hl.dsp.window.drag(), { mouse = true })
 
 -- Multimedia keys: volume and brightness (locked + repeating)
-hl.bind("XF86AudioRaiseVolume", hl.dsp.exec_cmd("wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+"), { locked = true, repeating = true })
-hl.bind("XF86AudioLowerVolume", hl.dsp.exec_cmd("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"),      { locked = true, repeating = true })
-hl.bind("XF86AudioMute",        hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"),     { locked = true, repeating = true })
-hl.bind("XF86AudioMicMute",     hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"),   { locked = true, repeating = true })
-hl.bind("XF86MonBrightnessUp",  hl.dsp.exec_cmd("brightnessctl -e4 -n2 set 5%+"),                  { locked = true, repeating = true })
-hl.bind("XF86MonBrightnessDown",hl.dsp.exec_cmd("brightnessctl -e4 -n2 set 5%-"),                  { locked = true, repeating = true })
+hl.bind("XF86AudioRaiseVolume", hl.dsp.exec_cmd("wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+"),
+    { locked = true, repeating = true })
+hl.bind("XF86AudioLowerVolume", hl.dsp.exec_cmd("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"),
+    { locked = true, repeating = true })
+hl.bind("XF86AudioMute", hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"),
+    { locked = true, repeating = true })
+hl.bind("XF86AudioMicMute", hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"),
+    { locked = true, repeating = true })
+hl.bind("XF86MonBrightnessUp", hl.dsp.exec_cmd("brightnessctl -e4 -n2 set 5%+"), { locked = true, repeating = true })
+hl.bind("XF86MonBrightnessDown", hl.dsp.exec_cmd("brightnessctl -e4 -n2 set 5%-"), { locked = true, repeating = true })
 
 -- Media player controls (locked, non-repeating)
-hl.bind("XF86AudioNext",  hl.dsp.exec_cmd("playerctl next"),       { locked = true })
+hl.bind("XF86AudioNext", hl.dsp.exec_cmd("playerctl next"), { locked = true })
 hl.bind("XF86AudioPause", hl.dsp.exec_cmd("playerctl play-pause"), { locked = true })
-hl.bind("XF86AudioPlay",  hl.dsp.exec_cmd("playerctl play-pause"), { locked = true })
-hl.bind("XF86AudioPrev",  hl.dsp.exec_cmd("playerctl previous"),   { locked = true })
+hl.bind("XF86AudioPlay", hl.dsp.exec_cmd("playerctl play-pause"), { locked = true })
+hl.bind("XF86AudioPrev", hl.dsp.exec_cmd("playerctl previous"), { locked = true })
 
 --------------------------------
 ---- WINDOWS AND WORKSPACES ----
 --------------------------------
 
 hl.window_rule({
-    name  = "fix-xwayland-drags",
-    match = {
+    name     = "fix-xwayland-drags",
+    match    = {
         class      = "^$",
         title      = "^$",
         xwayland   = true,
