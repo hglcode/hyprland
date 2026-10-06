@@ -1,6 +1,14 @@
--- ~/.config/hypr/config.lua
 -- Hyprland 0.56.2 Lua Configuration
--- Converted from hyprland.conf
+-- Converted from hyprland.conf (deleted 2026-10).
+--
+-- This file is the ONLY config entry. Don't add hyprland.conf back —
+-- configProvider picks up whichever it finds first, and a stale conf
+-- will silently override this lua file (see wiki "configProvider: hyprlang").
+--
+-- Layout / window / workspace logic that used to live under scripts/
+-- (toggle_floating, toggle_maximize, switch_client, etc.) is inlined
+-- here using hl.dsp.* dispatchers. Only backlight.sh + screenshot.sh
+-- remain under scripts/ — see scripts/README.md.
 
 ------------------
 ---- MONITORS ----
