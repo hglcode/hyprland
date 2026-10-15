@@ -6,7 +6,7 @@ set -eu
 if [ "$1" = "off" ]; then
     mkdir -p /tmp/monitor
     ddcutil getvcp 10 | cut -d'=' -f2 | cut -d',' -f1 | tr -d ' ' | tee /tmp/monitor/backlight
-    ddcutil setvcp 10 1
+    ddcutil setvcp 10 0
 else
     ddcutil setvcp 10 "$(cat /tmp/monitor/backlight 2>/dev/null || echo 65)"
 fi

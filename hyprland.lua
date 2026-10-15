@@ -178,10 +178,11 @@ hl.bind(mainMod .. " + Z", hl.dsp.exec_cmd("zed"))
 hl.bind(mainMod .. " + T", hl.dsp.exec_cmd(terminal))
 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(explorer))
 hl.bind(mainMod .. " + R", hl.dsp.exec_cmd(launcher))
+hl.bind(mainMod .. " + M",
+    hl.dsp.exec_cmd("gio launch " .. os.getenv("HOME") .. "/.local/share/applications/kugou.desktop"))
 
 -- Window management
 hl.bind(mainMod .. " + X", hl.dsp.window.close())
-hl.bind(mainMod .. " + M", hl.dsp.exec_cmd("hyprshutdown || hyprctl dispatch exit"))
 hl.bind(mainMod .. " + V", hl.dsp.window.float({ action = "toggle" }))
 hl.bind(mainMod .. " + L", hl.dsp.exec_cmd("hyprlock"))
 hl.bind(mainMod .. " + P", hl.dsp.window.pseudo())
